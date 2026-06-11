@@ -1,0 +1,1195 @@
+\documentclass[12pt,a4paper]{article}
+
+% ── Packages ──
+\usepackage[margin=1in]{geometry}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tcolorbox}
+\usepackage{parskip}
+
+% ── Colors ──
+\definecolor{sqlbg}{RGB}{245,245,250}
+\definecolor{sqlkw}{RGB}{0,0,180}
+\definecolor{sqlstr}{RGB}{163,21,21}
+\definecolor{sqlcomment}{RGB}{0,128,0}
+\definecolor{questionbg}{RGB}{232,245,255}
+\definecolor{answerbg}{RGB}{240,255,240}
+
+% ── SQL Listing Style ──
+\lstdefinestyle{sql}{
+    language=SQL,
+    backgroundcolor=\color{sqlbg},
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{sqlkw}\bfseries,
+    stringstyle=\color{sqlstr},
+    commentstyle=\color{sqlcomment}\itshape,
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{gray!40},
+    showstringspaces=false,
+    tabsize=4,
+    morekeywords={ENUM,BOOLEAN,DELIMITER,SIGNAL,SQLSTATE,AUTO_INCREMENT,
+                  TIMESTAMPDIFF,COALESCE,IFNULL,NOW,CONCAT,GROUP_CONCAT,
+                  ROUND,DATE_FORMAT,HOUR,DENSE_RANK,RANK,OVER,PARTITION,
+                  SAVEPOINT,ROLLBACK,GENERATED,STORED,ALWAYS,REPLACE}
+}
+\lstset{style=sql}
+
+% ── Header/Footer ──
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textbf{Parking Management System --- DBMS}}
+\fancyhead[R]{\thepage}
+\fancyfoot[C]{\footnotesize Database Management Systems Project}
+
+% ── Question/Answer Boxes ──
+\newtcolorbox{questionbox}[1][]{
+    colback=questionbg, colframe=blue!40!black,
+    fonttitle=\bfseries, title={#1},
+    boxrule=0.5pt, arc=3pt
+}
+\newtcolorbox{answerbox}{
+    colback=answerbg, colframe=green!40!black,
+    boxrule=0.3pt, arc=2pt, left=5pt, right=5pt
+}
+
+% ── Section Formatting ──
+\titleformat{\section}{\Large\bfseries\color{blue!60!black}}{\thesection}{1em}{}[\titlerule]
+\titleformat{\subsection}{\large\bfseries\color{blue!40!black}}{\thesubsection}{1em}{}
+
+% ============================================================
+\begin{document}
+
+\begin{titlepage}
+\centering
+\vspace*{3cm}
+{\Huge\bfseries Parking Management System\\[0.5cm]}
+{\LARGE Database Management Systems Project\\[1cm]}
+{\Large Compulsory Interview Questions\\[0.3cm]}
+{\large Theory, Queries \& Concepts\\[2cm]}
+{\large\textit{Covers: ER Diagrams, Normalization, SQL (DDL/DML/DRL/TCL/DCL),\\
+Joins, Subqueries, Views, Triggers, Stored Procedures,\\
+Transactions, Window Functions \& More}}
+\vfill
+{\large \today}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ============================================================
+\section{Project Overview Questions}
+% ============================================================
+
+\begin{questionbox}[Q1: What is the Parking Management System?]
+\end{questionbox}
+\begin{answerbox}
+The Parking Management System is a relational database project that manages parking slots, users, vehicles, reservations, parking records, and payments across multiple parking facilities. It is designed for efficient parking and slot allocation using MySQL.
+
+\textbf{Key entities:} Facility, Parking\_Slot, User, Vehicle, Reservation, Parking\_Record, Payment, Staff.
+
+\textbf{Core features:}
+\begin{itemize}[nosep]
+    \item Multi-facility support with floor-wise slot management
+    \item Vehicle registration and user membership tiers (Basic/Premium/VIP)
+    \item Advance reservation and real-time parking tracking
+    \item Automated billing based on duration and hourly rate
+    \item Staff management per facility
+\end{itemize}
+\end{answerbox}
+
+\begin{questionbox}[Q2: What tools and technologies did you use?]
+\end{questionbox}
+\begin{answerbox}
+\begin{itemize}[nosep]
+    \item \textbf{DBMS:} MySQL 8.x (via MySQL Workbench)
+    \item \textbf{SQL Features:} DDL, DML, DRL, TCL, DCL, Stored Procedures, Triggers, Views, Window Functions, Transactions
+    \item \textbf{Design:} ER Diagrams, Normalization to BCNF
+    \item \textbf{Schema:} 8 tables with proper foreign key constraints, indexes, and referential integrity
+\end{itemize}
+\end{answerbox}
+
+\begin{questionbox}[Q3: How many tables are in your schema? List them and their purpose.]
+\end{questionbox}
+\begin{answerbox}
+\begin{longtable}{@{}lp{9cm}@{}}
+\toprule
+\textbf{Table} & \textbf{Purpose} \\
+\midrule
+Facility & Stores parking facility/garage details (name, address, floors) \\
+Parking\_Slot & Individual slots within a facility (type, rate, occupancy status) \\
+User & Registered users of the system with membership tier \\
+Vehicle & Vehicles owned by users (type, brand, license plate) \\
+Reservation & Advance slot bookings with time range and status \\
+Parking\_Record & Actual entry/exit log with computed duration \\
+Payment & Payment for each parking session (amount, method, status) \\
+Staff & Employees managing each facility (role, salary) \\
+\bottomrule
+\end{longtable}
+\end{answerbox}
+
+% ============================================================
+\section{ER Diagram Questions}
+% ============================================================
+
+\begin{questionbox}[Q4: Explain the ER diagram of your project.]
+\end{questionbox}
+\begin{answerbox}
+The ER diagram consists of 8 entities with the following relationships:
+
+\textbf{One-to-Many (1:M) Relationships:}
+\begin{itemize}[nosep]
+    \item Facility $\rightarrow$ Parking\_Slot (a facility has many slots)
+    \item Facility $\rightarrow$ Staff (a facility employs many staff)
+    \item User $\rightarrow$ Vehicle (a user owns many vehicles)
+    \item User $\rightarrow$ Reservation (a user makes many reservations)
+    \item User $\rightarrow$ Payment (a user makes many payments)
+    \item Vehicle $\rightarrow$ Parking\_Record (a vehicle has many parking sessions)
+    \item Vehicle $\rightarrow$ Reservation (a vehicle has many reservations)
+    \item Parking\_Slot $\rightarrow$ Parking\_Record (a slot is used many times)
+    \item Parking\_Slot $\rightarrow$ Reservation (a slot is reserved many times)
+\end{itemize}
+
+\textbf{One-to-One (1:1) Relationship:}
+\begin{itemize}[nosep]
+    \item Parking\_Record $\leftrightarrow$ Payment (each record has exactly one payment)
+\end{itemize}
+
+\textbf{Primary Keys:} Each entity has a surrogate key (\texttt{*\_id} with \texttt{AUTO\_INCREMENT}).
+
+\textbf{Candidate Keys:} \texttt{User.email}, \texttt{User.license\_no}, \texttt{Vehicle.license\_plate}, \texttt{Parking\_Slot(facility\_id, floor\_number, slot\_number)}.
+\end{answerbox}
+
+\begin{questionbox}[Q5: What are the different types of attributes in your ER model?]
+\end{questionbox}
+\begin{answerbox}
+\begin{itemize}[nosep]
+    \item \textbf{Simple:} \texttt{first\_name}, \texttt{email}, \texttt{phone}
+    \item \textbf{Composite:} Full name = \texttt{first\_name} + \texttt{last\_name}; Address = \texttt{address} + \texttt{city} + \texttt{state} + \texttt{zip\_code}
+    \item \textbf{Derived:} \texttt{duration\_hours} (computed from \texttt{entry\_time} and \texttt{exit\_time}); \texttt{estimated\_bill} (computed in views)
+    \item \textbf{Multi-valued:} Not present (1NF compliant); a user's multiple vehicles are stored in a separate Vehicle table
+    \item \textbf{Key:} \texttt{facility\_id}, \texttt{slot\_id}, \texttt{user\_id}, etc.
+\end{itemize}
+\end{answerbox}
+
+\begin{questionbox}[Q6: What is cardinality? Explain with examples from your project.]
+\end{questionbox}
+\begin{answerbox}
+\textbf{Cardinality} defines the number of instances of one entity that can be associated with instances of another entity.
+
+\begin{itemize}[nosep]
+    \item \textbf{1:1} --- Parking\_Record to Payment. Each parking session generates exactly one payment, and each payment belongs to exactly one record. Enforced via \texttt{UNIQUE} constraint on \texttt{Payment.record\_id}.
+    \item \textbf{1:M} --- User to Vehicle. One user can own multiple vehicles, but each vehicle belongs to one user. Enforced via \texttt{Vehicle.user\_id} foreign key.
+    \item \textbf{M:N} --- Not directly present. However, Users and Slots have an implicit M:N relationship resolved through the Reservation and Parking\_Record junction tables.
+\end{itemize}
+\end{answerbox}
+
+% ============================================================
+\section{Normalization Questions}
+% ============================================================
+
+\begin{questionbox}[Q7: What is normalization? Why is it important?]
+\end{questionbox}
+\begin{answerbox}
+\textbf{Normalization} is the process of organizing a relational database to reduce data redundancy and eliminate undesirable anomalies (insertion, update, deletion anomalies).
+
+\textbf{Importance:}
+\begin{itemize}[nosep]
+    \item Eliminates redundant data storage
+    \item Prevents insertion anomalies (can't add data without unrelated data)
+    \item Prevents update anomalies (changing data in one place but not another)
+    \item Prevents deletion anomalies (deleting data accidentally removes other data)
+    \item Ensures data integrity and consistency
+\end{itemize}
+\end{answerbox}
+
+\begin{questionbox}[Q8: Show that your schema is in 1NF, 2NF, 3NF, and BCNF.]
+\end{questionbox}
+\begin{answerbox}
+\textbf{1NF (First Normal Form):}
+\begin{itemize}[nosep]
+    \item All attributes are atomic (no multi-valued attributes)
+    \item Every table has a primary key
+    \item No repeating groups (e.g., multiple vehicles stored in separate rows, not in one column)
+\end{itemize}
+
+\textbf{2NF (Second Normal Form):}
+\begin{itemize}[nosep]
+    \item Already in 1NF
+    \item No partial dependencies: all primary keys are single-column (\texttt{AUTO\_INCREMENT}), so partial dependency is impossible
+\end{itemize}
+
+\textbf{3NF (Third Normal Form):}
+\begin{itemize}[nosep]
+    \item Already in 2NF
+    \item No transitive dependencies: no non-key attribute determines another non-key attribute
+    \item Example: \texttt{slot\_type} does NOT determine \texttt{hourly\_rate} because different facilities can charge different rates for the same slot type
+\end{itemize}
+
+\textbf{BCNF (Boyce-Codd Normal Form):}
+\begin{itemize}[nosep]
+    \item Already in 3NF
+    \item For every functional dependency $X \rightarrow Y$, $X$ is a superkey
+    \item Example: In \texttt{User}, \texttt{user\_id} $\rightarrow$ all attributes (superkey); \texttt{email} $\rightarrow$ \texttt{user\_id} (email is a candidate key, hence a superkey)
+\end{itemize}
+\end{answerbox}
+
+\begin{questionbox}[Q9: List all functional dependencies in your schema.]
+\end{questionbox}
+\begin{answerbox}
+\begin{lstlisting}[language={},basicstyle=\ttfamily\small,backgroundcolor=\color{white},frame=none]
+Facility:
+  facility_id -> name, address, city, state, zip_code, total_floors
+
+Parking_Slot:
+  slot_id -> facility_id, floor_number, slot_number, slot_type,
+             is_occupied, hourly_rate
+  (facility_id, floor_number, slot_number) -> slot_id
+
+User:
+  user_id    -> first_name, last_name, email, phone, license_no, membership
+  email      -> user_id
+  license_no -> user_id
+
+Vehicle:
+  vehicle_id    -> user_id, license_plate, vehicle_type, brand, model, color
+  license_plate -> vehicle_id
+
+Reservation:
+  reservation_id -> user_id, slot_id, vehicle_id, reserved_from,
+                    reserved_until, status
+
+Parking_Record:
+  record_id -> vehicle_id, slot_id, entry_time, exit_time, duration_hours
+
+Payment:
+  payment_id -> record_id, user_id, amount, payment_method,
+                payment_status, paid_at
+  record_id  -> payment_id
+
+Staff:
+  staff_id -> facility_id, first_name, last_name, role, phone,
+              salary, hire_date
+\end{lstlisting}
+In every case, the determinant is a superkey $\Rightarrow$ BCNF satisfied.
+\end{answerbox}
+
+\begin{questionbox}[Q10: What is the difference between 3NF and BCNF?]
+\end{questionbox}
+\begin{answerbox}
+\begin{itemize}[nosep]
+    \item \textbf{3NF:} For every FD $X \rightarrow A$, either $X$ is a superkey OR $A$ is a prime attribute (part of a candidate key).
+    \item \textbf{BCNF:} For every FD $X \rightarrow A$, $X$ \textbf{must} be a superkey. No exception for prime attributes.
+    \item BCNF is stricter than 3NF. A relation in BCNF is always in 3NF, but not vice versa.
+    \item \textbf{Example of difference:} Consider a table \texttt{(Student, Course, Instructor)} where each instructor teaches only one course. FD: \texttt{Instructor} $\rightarrow$ \texttt{Course}. Here \texttt{Instructor} is not a superkey, but \texttt{Course} is a prime attribute (part of candidate key). This satisfies 3NF but violates BCNF.
+    \item In our project, since all determinants are superkeys, both 3NF and BCNF are satisfied.
+\end{itemize}
+\end{answerbox}
+
+% ============================================================
+\section{SQL Theory Questions}
+% ============================================================
+
+\begin{questionbox}[Q11: What are the different types of SQL commands? Give examples from your project.]
+\end{questionbox}
+\begin{answerbox}
+\begin{longtable}{@{}llp{7cm}@{}}
+\toprule
+\textbf{Category} & \textbf{Commands} & \textbf{Project Example} \\
+\midrule
+DDL (Data Definition) & CREATE, ALTER, DROP & \texttt{CREATE TABLE Facility (...)} \\
+DML (Data Manipulation) & INSERT, UPDATE, DELETE & \texttt{INSERT INTO User VALUES (...)} \\
+DRL/DQL (Data Retrieval) & SELECT & \texttt{SELECT * FROM vw\_facility\_occupancy} \\
+TCL (Transaction Control) & COMMIT, ROLLBACK, SAVEPOINT & \texttt{START TRANSACTION; ... COMMIT;} \\
+DCL (Data Control) & GRANT, REVOKE & \texttt{GRANT SELECT ON parking\_management.*} \\
+\bottomrule
+\end{longtable}
+\end{answerbox}
+
+\begin{questionbox}[Q12: What is the difference between DELETE, TRUNCATE, and DROP?]
+\end{questionbox}
+\begin{answerbox}
+\begin{longtable}{@{}lp{3.5cm}p{3.5cm}p{3.5cm}@{}}
+\toprule
+& \textbf{DELETE} & \textbf{TRUNCATE} & \textbf{DROP} \\
+\midrule
+Type & DML & DDL & DDL \\
+What it removes & Specific rows (with WHERE) & All rows & Entire table (structure + data) \\
+Rollback & Yes (within transaction) & No & No \\
+WHERE clause & Supported & Not supported & Not applicable \\
+Triggers fired & Yes & No & No \\
+Space reclaim & No (until OPTIMIZE) & Yes & Yes \\
+\bottomrule
+\end{longtable}
+
+Project example:
+\begin{lstlisting}
+-- DELETE specific rows
+DELETE FROM Reservation WHERE status = 'Cancelled';
+
+-- TRUNCATE all rows
+TRUNCATE TABLE Parking_Record;
+
+-- DROP entire table
+DROP TABLE Staff;
+\end{lstlisting}
+\end{answerbox}
+
+\begin{questionbox}[Q13: What are constraints? Which ones did you use?]
+\end{questionbox}
+\begin{answerbox}
+\textbf{Constraints} enforce rules on data to maintain integrity.
+
+\begin{longtable}{@{}lp{5cm}p{5cm}@{}}
+\toprule
+\textbf{Constraint} & \textbf{Purpose} & \textbf{Project Usage} \\
+\midrule
+PRIMARY KEY & Uniquely identifies each row & \texttt{user\_id INT AUTO\_INCREMENT PRIMARY KEY} \\
+FOREIGN KEY & Enforces referential integrity & \texttt{FOREIGN KEY (facility\_id) REFERENCES Facility(facility\_id)} \\
+UNIQUE & No duplicate values & \texttt{email VARCHAR(100) UNIQUE} \\
+NOT NULL & Column cannot be NULL & \texttt{name VARCHAR(100) NOT NULL} \\
+DEFAULT & Sets default value & \texttt{is\_occupied BOOLEAN DEFAULT FALSE} \\
+CHECK (via ENUM) & Restricts allowed values & \texttt{slot\_type ENUM('Compact','Regular','Large',...)} \\
+\bottomrule
+\end{longtable}
+\end{answerbox}
+
+\begin{questionbox}[Q14: What is referential integrity? How is it enforced in your project?]
+\end{questionbox}
+\begin{answerbox}
+\textbf{Referential integrity} ensures that a foreign key value in a child table always refers to a valid primary key in the parent table.
+
+\textbf{How enforced:}
+\begin{lstlisting}
+FOREIGN KEY (facility_id) REFERENCES Facility(facility_id)
+    ON DELETE CASCADE ON UPDATE CASCADE
+\end{lstlisting}
+
+\begin{itemize}[nosep]
+    \item \textbf{ON DELETE CASCADE:} If a facility is deleted, all its slots, records, and payments are automatically deleted
+    \item \textbf{ON UPDATE CASCADE:} If a facility\_id changes, all referencing rows are automatically updated
+    \item Prevents orphan records (e.g., a vehicle referencing a non-existent user)
+\end{itemize}
+\end{answerbox}
+
+% ============================================================
+\section{Keys \& Indexing Questions}
+% ============================================================
+
+\begin{questionbox}[Q15: Explain all types of keys with examples from your project.]
+\end{questionbox}
+\begin{answerbox}
+\begin{itemize}[nosep]
+    \item \textbf{Super Key:} Any set of attributes that uniquely identifies a row.\\
+    Example: \texttt{\{user\_id\}}, \texttt{\{user\_id, email\}}, \texttt{\{email\}} in User table.
+
+    \item \textbf{Candidate Key:} Minimal super key (no proper subset is a super key).\\
+    Example: \texttt{user\_id}, \texttt{email}, \texttt{license\_no} in User table.
+
+    \item \textbf{Primary Key:} The chosen candidate key for the table.\\
+    Example: \texttt{user\_id} in User table.
+
+    \item \textbf{Alternate Key:} Candidate keys not chosen as primary key.\\
+    Example: \texttt{email} and \texttt{license\_no} in User table.
+
+    \item \textbf{Foreign Key:} An attribute referencing the primary key of another table.\\
+    Example: \texttt{Vehicle.user\_id} references \texttt{User.user\_id}.
+
+    \item \textbf{Composite Key:} A key with multiple attributes.\\
+    Example: \texttt{(facility\_id, floor\_number, slot\_number)} is a composite candidate key in Parking\_Slot.
+\end{itemize}
+\end{answerbox}
+
+\begin{questionbox}[Q16: What are indexes? Which indexes did you create and why?]
+\end{questionbox}
+\begin{answerbox}
+An \textbf{index} is a data structure (typically B-Tree in MySQL) that speeds up data retrieval at the cost of additional storage and slower writes.
+
+\textbf{Indexes in the project:}
+\begin{lstlisting}
+CREATE INDEX idx_slot_facility ON Parking_Slot(facility_id, is_occupied);
+CREATE INDEX idx_vehicle_user  ON Vehicle(user_id);
+CREATE INDEX idx_record_entry  ON Parking_Record(entry_time);
+CREATE INDEX idx_payment_status ON Payment(payment_status);
+\end{lstlisting}
+
+\textbf{Why these indexes:}
+\begin{itemize}[nosep]
+    \item \texttt{idx\_slot\_facility}: Frequently query available slots per facility
+    \item \texttt{idx\_vehicle\_user}: Join Vehicle with User on every parking query
+    \item \texttt{idx\_record\_entry}: Range queries on parking times (reports, analytics)
+    \item \texttt{idx\_payment\_status}: Filter completed vs.\ pending payments
+\end{itemize}
+
+MySQL also automatically creates indexes on PRIMARY KEY and UNIQUE columns.
+\end{answerbox}
+
+% ============================================================
+\section{Joins Questions}
+% ============================================================
+
+\begin{questionbox}[Q17: Explain all types of JOINs with SQL examples from your project.]
+\end{questionbox}
+\begin{answerbox}
+
+\textbf{1. INNER JOIN} --- Returns rows with matching values in both tables.
+\begin{lstlisting}
+-- Users who have made payments
+SELECT u.first_name, p.amount
+FROM User u
+INNER JOIN Payment p ON u.user_id = p.user_id;
+\end{lstlisting}
+
+\textbf{2. LEFT (OUTER) JOIN} --- All rows from left table + matching from right.
+\begin{lstlisting}
+-- All users, even those without reservations
+SELECT u.first_name, r.reservation_id
+FROM User u
+LEFT JOIN Reservation r ON u.user_id = r.user_id;
+\end{lstlisting}
+
+\textbf{3. RIGHT (OUTER) JOIN} --- All rows from right table + matching from left.
+\begin{lstlisting}
+-- All slots, even those never parked in
+SELECT ps.slot_number, pr.record_id
+FROM Parking_Record pr
+RIGHT JOIN Parking_Slot ps ON pr.slot_id = ps.slot_id;
+\end{lstlisting}
+
+\textbf{4. CROSS JOIN} --- Cartesian product of both tables.
+\begin{lstlisting}
+-- All user-facility combinations
+SELECT u.first_name, f.name
+FROM User u CROSS JOIN Facility f;
+\end{lstlisting}
+
+\textbf{5. SELF JOIN} --- A table joined with itself.
+\begin{lstlisting}
+-- Staff members at the same facility
+SELECT s1.first_name AS staff1, s2.first_name AS staff2
+FROM Staff s1
+JOIN Staff s2 ON s1.facility_id = s2.facility_id
+  AND s1.staff_id < s2.staff_id;
+\end{lstlisting}
+\end{answerbox}
+
+\begin{questionbox}[Q18: What is a natural join? How is it different from an inner join?]
+\end{questionbox}
+\begin{answerbox}
+\begin{itemize}[nosep]
+    \item \textbf{Natural Join:} Automatically joins on columns with the \textbf{same name} in both tables. No ON clause needed.
+    \item \textbf{Inner Join:} Requires an explicit ON clause specifying the join condition.
+    \item \textbf{Danger of Natural Join:} If two tables share a column name by coincidence (e.g., \texttt{phone} in both User and Staff), it joins on that too, producing incorrect results.
+    \item \textbf{Best practice:} Always use explicit INNER JOIN with ON clause.
+\end{itemize}
+\begin{lstlisting}
+-- Natural join (not recommended)
+SELECT * FROM Vehicle NATURAL JOIN User;
+
+-- Equivalent explicit inner join (recommended)
+SELECT * FROM Vehicle v INNER JOIN User u ON v.user_id = u.user_id;
+\end{lstlisting}
+\end{answerbox}
+
+% ============================================================
+\section{Subqueries \& Nested Queries}
+% ============================================================
+
+\begin{questionbox}[Q19: What are subqueries? Explain with examples.]
+\end{questionbox}
+\begin{answerbox}
+A \textbf{subquery} (nested query) is a SELECT statement inside another SQL statement.
+
+\textbf{Types and examples:}
+
+\textbf{1. Scalar Subquery} (returns single value):
+\begin{lstlisting}
+-- Users who spent more than average
+SELECT first_name, amount FROM Payment p
+JOIN User u ON p.user_id = u.user_id
+WHERE amount > (SELECT AVG(amount) FROM Payment);
+\end{lstlisting}
+
+\textbf{2. Row Subquery} (returns single row):
+\begin{lstlisting}
+-- Facility with highest occupancy
+SELECT name FROM Facility WHERE facility_id = (
+    SELECT facility_id FROM Parking_Slot
+    GROUP BY facility_id ORDER BY SUM(is_occupied) DESC LIMIT 1
+);
+\end{lstlisting}
+
+\textbf{3. Table Subquery} (returns a table):
+\begin{lstlisting}
+-- Used in FROM clause
+SELECT facility, occupancy_pct FROM (
+    SELECT f.name AS facility,
+           SUM(s.is_occupied)*100.0/COUNT(*) AS occupancy_pct
+    FROM Parking_Slot s JOIN Facility f ON s.facility_id = f.facility_id
+    GROUP BY f.facility_id, f.name
+) AS sub WHERE occupancy_pct > 30;
+\end{lstlisting}
+
+\textbf{4. Correlated Subquery} (references outer query):
+\begin{lstlisting}
+-- Users whose total spend exceeds 500
+SELECT first_name, (
+    SELECT SUM(amount) FROM Payment p
+    WHERE p.user_id = u.user_id
+) AS total_spent
+FROM User u HAVING total_spent > 500;
+\end{lstlisting}
+\end{answerbox}
+
+\begin{questionbox}[Q20: What is the difference between IN, EXISTS, and ANY/ALL?]
+\end{questionbox}
+\begin{answerbox}
+\begin{itemize}[nosep]
+    \item \textbf{IN:} Checks if a value matches any value in a list or subquery result.
+    \item \textbf{EXISTS:} Returns TRUE if the subquery returns at least one row. More efficient for correlated subqueries.
+    \item \textbf{ANY/SOME:} Compares a value with any single value from the subquery using an operator (\texttt{>}, \texttt{<}, \texttt{=}).
+    \item \textbf{ALL:} Compares a value with every value from the subquery.
+\end{itemize}
+\begin{lstlisting}
+-- IN: Facilities with EV slots
+SELECT name FROM Facility WHERE facility_id IN (
+    SELECT facility_id FROM Parking_Slot WHERE slot_type = 'EV');
+
+-- EXISTS: Same query, more efficient
+SELECT name FROM Facility f WHERE EXISTS (
+    SELECT 1 FROM Parking_Slot ps
+    WHERE ps.facility_id = f.facility_id AND ps.slot_type = 'EV');
+
+-- ANY: Users who paid more than ANY VIP user's payment
+SELECT * FROM Payment WHERE amount > ANY (
+    SELECT amount FROM Payment p JOIN User u ON p.user_id = u.user_id
+    WHERE u.membership = 'VIP');
+
+-- ALL: Payments greater than ALL basic user payments
+SELECT * FROM Payment WHERE amount > ALL (
+    SELECT amount FROM Payment p JOIN User u ON p.user_id = u.user_id
+    WHERE u.membership = 'Basic');
+\end{lstlisting}
+\end{answerbox}
+
+% ============================================================
+\section{Aggregate Functions \& GROUP BY}
+% ============================================================
+
+\begin{questionbox}[Q21: What are aggregate functions? List all with examples.]
+\end{questionbox}
+\begin{answerbox}
+Aggregate functions perform calculations on a set of values and return a single result.
+
+\begin{longtable}{@{}llp{6cm}@{}}
+\toprule
+\textbf{Function} & \textbf{Purpose} & \textbf{Project Example} \\
+\midrule
+COUNT() & Count rows & \texttt{SELECT COUNT(*) FROM Parking\_Slot WHERE is\_occupied = TRUE;} \\
+SUM()   & Sum of values & \texttt{SELECT SUM(amount) FROM Payment WHERE payment\_status = 'Completed';} \\
+AVG()   & Average value & \texttt{SELECT AVG(duration\_hours) FROM Parking\_Record;} \\
+MAX()   & Maximum value & \texttt{SELECT MAX(salary) FROM Staff;} \\
+MIN()   & Minimum value & \texttt{SELECT MIN(hourly\_rate) FROM Parking\_Slot;} \\
+GROUP\_CONCAT() & Concatenate values & \texttt{SELECT GROUP\_CONCAT(license\_plate) FROM Vehicle GROUP BY user\_id;} \\
+\bottomrule
+\end{longtable}
+\end{answerbox}
+
+\begin{questionbox}[Q22: What is the difference between WHERE and HAVING?]
+\end{questionbox}
+\begin{answerbox}
+\begin{longtable}{@{}lp{5.5cm}p{5.5cm}@{}}
+\toprule
+& \textbf{WHERE} & \textbf{HAVING} \\
+\midrule
+Applied & Before GROUP BY (filters rows) & After GROUP BY (filters groups) \\
+Aggregates & Cannot use aggregate functions & Can use aggregate functions \\
+Usage & Filter individual rows & Filter grouped results \\
+\bottomrule
+\end{longtable}
+
+\begin{lstlisting}
+-- WHERE: Filter rows before grouping
+SELECT facility_id, COUNT(*) AS cnt FROM Parking_Slot
+WHERE slot_type = 'Regular'  -- filters individual rows
+GROUP BY facility_id;
+
+-- HAVING: Filter groups after grouping
+SELECT facility_id, COUNT(*) AS cnt FROM Parking_Slot
+GROUP BY facility_id
+HAVING cnt > 5;  -- filters entire groups
+\end{lstlisting}
+\end{answerbox}
+
+% ============================================================
+\section{Views Questions}
+% ============================================================
+
+\begin{questionbox}[Q23: What are views? What views did you create?]
+\end{questionbox}
+\begin{answerbox}
+A \textbf{view} is a virtual table based on a SELECT query. It does not store data; it dynamically executes the query when accessed.
+
+\textbf{Views in the project:}
+\begin{enumerate}[nosep]
+    \item \texttt{vw\_facility\_occupancy} --- Dashboard showing total, occupied, and available slots per facility with occupancy percentage.
+    \item \texttt{vw\_revenue\_summary} --- Revenue breakdown per facility (total transactions, revenue, average).
+    \item \texttt{vw\_active\_sessions} --- Currently parked vehicles with estimated bill based on time parked.
+\end{enumerate}
+
+\begin{lstlisting}
+CREATE OR REPLACE VIEW vw_facility_occupancy AS
+SELECT f.name AS facility,
+       COUNT(s.slot_id) AS total_slots,
+       SUM(s.is_occupied) AS occupied_slots,
+       ROUND(SUM(s.is_occupied)*100.0/COUNT(s.slot_id), 1) AS occupancy_pct
+FROM Facility f
+JOIN Parking_Slot s ON f.facility_id = s.facility_id
+GROUP BY f.facility_id, f.name;
+\end{lstlisting}
+
+\textbf{Advantages:} Simplifies complex queries, provides data abstraction, enhances security (expose views instead of base tables).
+\end{answerbox}
+
+% ============================================================
+\section{Stored Procedures \& Functions}
+% ============================================================
+
+\begin{questionbox}[Q24: What stored procedures did you create? Explain one in detail.]
+\end{questionbox}
+\begin{answerbox}
+\textbf{Three stored procedures:}
+\begin{enumerate}[nosep]
+    \item \texttt{sp\_park\_vehicle(vehicle\_id, slot\_id)} --- Parks a vehicle
+    \item \texttt{sp\_exit\_vehicle(record\_id, payment\_method)} --- Exits vehicle and generates bill
+    \item \texttt{sp\_facility\_report(facility\_id)} --- Comprehensive facility report
+\end{enumerate}
+
+\textbf{Detailed explanation of} \texttt{sp\_exit\_vehicle}:
+\begin{lstlisting}
+DELIMITER //
+CREATE PROCEDURE sp_exit_vehicle(
+    IN p_record_id INT, IN p_payment_method VARCHAR(20))
+BEGIN
+    -- 1. Set exit_time to NOW()
+    UPDATE Parking_Record SET exit_time = NOW()
+    WHERE record_id = p_record_id;
+
+    -- 2. Calculate duration and amount
+    -- amount = hours * hourly_rate (minimum 1 hour charge)
+
+    -- 3. Insert payment record
+
+    -- 4. Free the slot (set is_occupied = FALSE)
+
+    -- 5. Return bill summary
+END //
+DELIMITER ;
+\end{lstlisting}
+
+This procedure atomically handles: updating the record, calculating the bill, recording the payment, and freeing the slot --- all in a single call.
+\end{answerbox}
+
+\begin{questionbox}[Q25: Difference between stored procedure and function?]
+\end{questionbox}
+\begin{answerbox}
+\begin{longtable}{@{}lp{5.5cm}p{5.5cm}@{}}
+\toprule
+& \textbf{Stored Procedure} & \textbf{Function} \\
+\midrule
+Return value & 0 or more via OUT params & Exactly one via RETURN \\
+Called with & \texttt{CALL sp\_name()} & Used in SELECT expressions \\
+DML allowed & Yes (INSERT, UPDATE, DELETE) & Limited (no permanent changes in MySQL) \\
+Transaction & Can use COMMIT/ROLLBACK & Cannot \\
+Use in SQL & Cannot be used in SELECT/WHERE & Can be used in SELECT/WHERE \\
+\bottomrule
+\end{longtable}
+\end{answerbox}
+
+% ============================================================
+\section{Triggers Questions}
+% ============================================================
+
+\begin{questionbox}[Q26: What are triggers? Explain the triggers in your project.]
+\end{questionbox}
+\begin{answerbox}
+A \textbf{trigger} is a stored program that automatically executes in response to an event (INSERT, UPDATE, DELETE) on a table.
+
+\textbf{Triggers in the project:}
+
+\textbf{1. trg\_after\_park} (AFTER INSERT on Parking\_Record):
+\begin{lstlisting}
+-- Automatically marks the slot as occupied when a vehicle parks
+CREATE TRIGGER trg_after_park AFTER INSERT ON Parking_Record
+FOR EACH ROW
+BEGIN
+    UPDATE Parking_Slot SET is_occupied = TRUE
+    WHERE slot_id = NEW.slot_id;
+END;
+\end{lstlisting}
+
+\textbf{2. trg\_after\_exit} (AFTER UPDATE on Parking\_Record):
+\begin{lstlisting}
+-- Frees the slot when exit_time is set
+CREATE TRIGGER trg_after_exit AFTER UPDATE ON Parking_Record
+FOR EACH ROW
+BEGIN
+    IF OLD.exit_time IS NULL AND NEW.exit_time IS NOT NULL THEN
+        UPDATE Parking_Slot SET is_occupied = FALSE
+        WHERE slot_id = NEW.slot_id;
+    END IF;
+END;
+\end{lstlisting}
+
+\textbf{3. trg\_before\_user\_delete} (BEFORE DELETE on User):
+Prevents deleting a user who has vehicles currently parked.
+
+\textbf{Types:} BEFORE vs AFTER $\times$ INSERT/UPDATE/DELETE = 6 types possible.
+\end{answerbox}
+
+% ============================================================
+\section{Transaction \& Concurrency Questions}
+% ============================================================
+
+\begin{questionbox}[Q27: What are ACID properties? How does your project ensure them?]
+\end{questionbox}
+\begin{answerbox}
+\begin{itemize}[nosep]
+    \item \textbf{Atomicity:} A transaction is all-or-nothing. If vehicle exit fails mid-way, the entire operation rolls back.\\
+    \textit{Project:} \texttt{sp\_exit\_vehicle} updates record, inserts payment, and frees slot atomically.
+
+    \item \textbf{Consistency:} Database moves from one valid state to another. Foreign keys, UNIQUE constraints, and triggers ensure no invalid data.\\
+    \textit{Project:} \texttt{trg\_before\_user\_delete} prevents orphaning active parking sessions.
+
+    \item \textbf{Isolation:} Concurrent transactions don't interfere. MySQL's InnoDB engine uses row-level locking.\\
+    \textit{Project:} Two users trying to book the same slot --- only one succeeds.
+
+    \item \textbf{Durability:} Once committed, data survives crashes. InnoDB uses write-ahead logging (redo log).\\
+    \textit{Project:} After \texttt{COMMIT}, payment records persist even if server restarts.
+\end{itemize}
+\end{answerbox}
+
+\begin{questionbox}[Q28: Explain COMMIT, ROLLBACK, and SAVEPOINT with examples.]
+\end{questionbox}
+\begin{answerbox}
+\begin{lstlisting}
+-- COMMIT: Make changes permanent
+START TRANSACTION;
+    UPDATE Parking_Slot SET is_occupied = FALSE WHERE slot_id = 2;
+    UPDATE Parking_Slot SET is_occupied = TRUE  WHERE slot_id = 3;
+COMMIT;  -- Both changes saved permanently
+
+-- ROLLBACK: Undo all changes since START TRANSACTION
+START TRANSACTION;
+    DELETE FROM User WHERE user_id = 5;
+ROLLBACK;  -- User 5 is NOT deleted
+
+-- SAVEPOINT: Partial rollback
+START TRANSACTION;
+    UPDATE User SET membership = 'VIP' WHERE user_id = 7;
+    SAVEPOINT before_delete;
+    DELETE FROM Reservation WHERE reservation_id = 13;
+    ROLLBACK TO before_delete;  -- Reservation NOT deleted
+COMMIT;  -- Membership change IS saved
+\end{lstlisting}
+\end{answerbox}
+
+% ============================================================
+\section{Window Functions}
+% ============================================================
+
+\begin{questionbox}[Q29: What are window functions? Give examples from your project.]
+\end{questionbox}
+\begin{answerbox}
+\textbf{Window functions} perform calculations across a set of rows related to the current row, without collapsing them into a single output row (unlike GROUP BY).
+
+\textbf{Syntax:} \texttt{function() OVER (PARTITION BY ... ORDER BY ...)}
+
+\textbf{Examples from the project:}
+
+\textbf{1. RANK():} Rank facilities by revenue.
+\begin{lstlisting}
+SELECT f.name, SUM(p.amount) AS revenue,
+       RANK() OVER (ORDER BY SUM(p.amount) DESC) AS revenue_rank
+FROM Payment p
+JOIN Parking_Record pr ON p.record_id = pr.record_id
+JOIN Parking_Slot ps ON pr.slot_id = ps.slot_id
+JOIN Facility f ON ps.facility_id = f.facility_id
+GROUP BY f.facility_id, f.name;
+\end{lstlisting}
+
+\textbf{2. Running total:}
+\begin{lstlisting}
+SELECT payment_id, paid_at, amount,
+       SUM(amount) OVER (ORDER BY paid_at) AS running_total
+FROM Payment WHERE payment_status = 'Completed';
+\end{lstlisting}
+
+\textbf{3. DENSE\_RANK():} Rank users by spending.
+\begin{lstlisting}
+SELECT CONCAT(u.first_name, ' ', u.last_name) AS customer,
+       SUM(p.amount) AS total_spent,
+       DENSE_RANK() OVER (ORDER BY SUM(p.amount) DESC) AS rank
+FROM Payment p JOIN User u ON p.user_id = u.user_id
+GROUP BY u.user_id;
+\end{lstlisting}
+
+\textbf{Difference:} \texttt{RANK()} skips numbers after ties (1,2,2,4); \texttt{DENSE\_RANK()} does not (1,2,2,3).
+\end{answerbox}
+
+% ============================================================
+\section{Advanced Theory Questions}
+% ============================================================
+
+\begin{questionbox}[Q30: What is denormalization? Is there any in your project?]
+\end{questionbox}
+\begin{answerbox}
+\textbf{Denormalization} is the intentional introduction of redundancy to improve read performance.
+
+\textbf{In our project:} The \texttt{Payment} table stores \texttt{user\_id} directly, even though it could be derived via \texttt{Payment} $\rightarrow$ \texttt{Parking\_Record} $\rightarrow$ \texttt{Vehicle} $\rightarrow$ \texttt{User}. This avoids a 3-table join for every payment query, trading minimal redundancy for significant query performance.
+
+\textbf{When to denormalize:}
+\begin{itemize}[nosep]
+    \item Read-heavy workloads where join cost is high
+    \item Reporting/analytics queries that run frequently
+    \item When the redundant data rarely changes
+\end{itemize}
+\end{answerbox}
+
+\begin{questionbox}[Q31: What is the difference between ENUM and a lookup table?]
+\end{questionbox}
+\begin{answerbox}
+Our project uses \texttt{ENUM} for fixed-value columns like \texttt{slot\_type}, \texttt{membership}, and \texttt{payment\_method}.
+
+\begin{longtable}{@{}lp{5.5cm}p{5.5cm}@{}}
+\toprule
+& \textbf{ENUM} & \textbf{Lookup Table} \\
+\midrule
+Storage & Stored as integer internally (efficient) & Requires JOIN (extra table) \\
+Modification & Requires ALTER TABLE to add values & Simple INSERT into lookup table \\
+Best for & Small, rarely-changing value sets & Frequently changing or large value sets \\
+Portability & MySQL-specific & Standard SQL (works everywhere) \\
+\bottomrule
+\end{longtable}
+
+We chose ENUM because slot types, membership tiers, and payment methods are stable, small sets that rarely change.
+\end{answerbox}
+
+\begin{questionbox}[Q32: Explain the \texttt{GENERATED ALWAYS AS} column in your schema.]
+\end{questionbox}
+\begin{answerbox}
+In \texttt{Parking\_Record}, the \texttt{duration\_hours} column is a \textbf{generated (computed) column}:
+
+\begin{lstlisting}
+duration_hours DECIMAL(5,2) GENERATED ALWAYS AS (
+    CASE WHEN exit_time IS NOT NULL
+         THEN TIMESTAMPDIFF(MINUTE, entry_time, exit_time) / 60.0
+         ELSE NULL
+    END
+) STORED;
+\end{lstlisting}
+
+\begin{itemize}[nosep]
+    \item \textbf{GENERATED ALWAYS:} Value is automatically computed; cannot be manually set
+    \item \textbf{STORED:} Value is computed on INSERT/UPDATE and physically stored (vs. VIRTUAL which computes on read)
+    \item \textbf{Advantage:} No application logic needed; consistent duration calculation; can be indexed
+    \item \textbf{Trade-off:} Uses extra storage, but avoids repeated computation on reads
+\end{itemize}
+\end{answerbox}
+
+\begin{questionbox}[Q33: What is an ER model? Explain the components.]
+\end{questionbox}
+\begin{answerbox}
+The \textbf{Entity-Relationship (ER) Model} is a conceptual data model used to describe the structure of a database.
+
+\textbf{Components:}
+\begin{itemize}[nosep]
+    \item \textbf{Entity:} A real-world object (rectangle). Example: User, Vehicle, Facility.
+    \item \textbf{Attribute:} Property of an entity (oval). Example: \texttt{first\_name}, \texttt{email}.
+    \item \textbf{Relationship:} Association between entities (diamond). Example: User \textit{OWNS} Vehicle.
+    \item \textbf{Primary Key:} Underlined attribute. Example: \underline{\texttt{user\_id}}.
+    \item \textbf{Cardinality:} 1:1, 1:M, M:N notation on relationship lines.
+    \item \textbf{Participation:} Total (double line, entity must participate) vs. Partial (single line, optional).
+\end{itemize}
+
+In our project, User has \textbf{total participation} in Vehicle (every user must register a vehicle), while Vehicle has \textbf{partial participation} in Parking\_Record (a vehicle may or may not have parked).
+\end{answerbox}
+
+\begin{questionbox}[Q34: What is the difference between CHAR and VARCHAR?]
+\end{questionbox}
+\begin{answerbox}
+\begin{longtable}{@{}lp{5.5cm}p{5.5cm}@{}}
+\toprule
+& \textbf{CHAR(n)} & \textbf{VARCHAR(n)} \\
+\midrule
+Storage & Fixed-length (always n bytes) & Variable-length (actual length + 1-2 bytes) \\
+Padding & Right-padded with spaces & No padding \\
+Performance & Faster for fixed-size data & Slightly slower (length prefix overhead) \\
+Use case & Fixed-length codes (state codes, zip) & Variable-length strings (names, emails) \\
+\bottomrule
+\end{longtable}
+
+In our project: \texttt{zip\_code VARCHAR(10)} (varies by country), \texttt{email VARCHAR(100)} (variable length).
+
+For fixed-format data like a 2-letter state code, \texttt{CHAR(2)} would be more efficient.
+\end{answerbox}
+
+\begin{questionbox}[Q35: What are the different isolation levels in MySQL?]
+\end{questionbox}
+\begin{answerbox}
+\begin{longtable}{@{}lp{2cm}p{2cm}p{2cm}p{2cm}@{}}
+\toprule
+\textbf{Isolation Level} & \textbf{Dirty Read} & \textbf{Non-Repeatable Read} & \textbf{Phantom Read} & \textbf{Performance} \\
+\midrule
+READ UNCOMMITTED & Yes & Yes & Yes & Fastest \\
+READ COMMITTED & No & Yes & Yes & Fast \\
+REPEATABLE READ (MySQL default) & No & No & Yes & Moderate \\
+SERIALIZABLE & No & No & No & Slowest \\
+\bottomrule
+\end{longtable}
+
+\textbf{In our project context:}
+\begin{itemize}[nosep]
+    \item When two users try to reserve the same slot, REPEATABLE READ prevents one from seeing the other's uncommitted reservation
+    \item SERIALIZABLE would be needed if we must guarantee no phantom slots appear during a range query
+\end{itemize}
+\end{answerbox}
+
+% ============================================================
+\section{Practical Query Questions}
+% ============================================================
+
+\begin{questionbox}[Q36: Write a query to find all available EV slots across all facilities.]
+\end{questionbox}
+\begin{answerbox}
+\begin{lstlisting}
+SELECT f.name AS facility, ps.floor_number, ps.slot_number, ps.hourly_rate
+FROM Parking_Slot ps
+JOIN Facility f ON ps.facility_id = f.facility_id
+WHERE ps.slot_type = 'EV' AND ps.is_occupied = FALSE
+ORDER BY f.name, ps.floor_number;
+\end{lstlisting}
+\end{answerbox}
+
+\begin{questionbox}[Q37: Write a query for the top 3 highest-revenue facilities.]
+\end{questionbox}
+\begin{answerbox}
+\begin{lstlisting}
+SELECT f.name AS facility, SUM(p.amount) AS total_revenue
+FROM Payment p
+JOIN Parking_Record pr ON p.record_id = pr.record_id
+JOIN Parking_Slot ps ON pr.slot_id = ps.slot_id
+JOIN Facility f ON ps.facility_id = f.facility_id
+WHERE p.payment_status = 'Completed'
+GROUP BY f.facility_id, f.name
+ORDER BY total_revenue DESC
+LIMIT 3;
+\end{lstlisting}
+\end{answerbox}
+
+\begin{questionbox}[Q38: Write a query to find peak parking hours.]
+\end{questionbox}
+\begin{answerbox}
+\begin{lstlisting}
+SELECT HOUR(entry_time) AS hour_of_day,
+       COUNT(*) AS total_entries
+FROM Parking_Record
+GROUP BY HOUR(entry_time)
+ORDER BY total_entries DESC;
+\end{lstlisting}
+This helps management schedule more staff during peak hours.
+\end{answerbox}
+
+\begin{questionbox}[Q39: Write a query to simulate membership-based discounts.]
+\end{questionbox}
+\begin{answerbox}
+\begin{lstlisting}
+SELECT CONCAT(u.first_name, ' ', u.last_name) AS customer,
+       u.membership, p.amount AS original,
+       CASE u.membership
+           WHEN 'VIP'     THEN ROUND(p.amount * 0.80, 2)  -- 20% off
+           WHEN 'Premium' THEN ROUND(p.amount * 0.90, 2)  -- 10% off
+           ELSE p.amount                                    -- no discount
+       END AS discounted_amount
+FROM Payment p
+JOIN User u ON p.user_id = u.user_id
+WHERE p.payment_status = 'Completed';
+\end{lstlisting}
+\end{answerbox}
+
+\begin{questionbox}[Q40: Write a query using GROUP\_CONCAT to list all vehicles per user.]
+\end{questionbox}
+\begin{answerbox}
+\begin{lstlisting}
+SELECT CONCAT(u.first_name, ' ', u.last_name) AS owner,
+       COUNT(v.vehicle_id) AS vehicle_count,
+       GROUP_CONCAT(v.license_plate ORDER BY v.license_plate
+                    SEPARATOR ', ') AS all_plates
+FROM User u
+JOIN Vehicle v ON u.user_id = v.user_id
+GROUP BY u.user_id
+ORDER BY vehicle_count DESC;
+\end{lstlisting}
+\end{answerbox}
+
+% ============================================================
+\section{Miscellaneous Interview Questions}
+% ============================================================
+
+\begin{questionbox}[Q41: What challenges did you face in this project?]
+\end{questionbox}
+\begin{answerbox}
+\begin{itemize}[nosep]
+    \item \textbf{Concurrent slot booking:} Two users booking the same slot simultaneously. Solved with UNIQUE constraints and transaction isolation.
+    \item \textbf{Duration calculation:} Computing parking duration dynamically. Solved with MySQL's \texttt{GENERATED ALWAYS AS} stored computed column.
+    \item \textbf{Cascading deletes:} Ensuring referential integrity when deleting facilities or users. Solved with \texttt{ON DELETE CASCADE} and protective triggers.
+    \item \textbf{Billing edge cases:} Minimum charge enforcement (at least 1 hour). Handled in the stored procedure logic.
+    \item \textbf{Normalization vs.\ Performance:} Decided to store \texttt{user\_id} in Payment (slight denormalization) to avoid expensive 3-table joins for common payment queries.
+\end{itemize}
+\end{answerbox}
+
+\begin{questionbox}[Q42: How would you scale this system for a real-world deployment?]
+\end{questionbox}
+\begin{answerbox}
+\begin{itemize}[nosep]
+    \item \textbf{Partitioning:} Partition \texttt{Parking\_Record} by month (range partitioning on \texttt{entry\_time}) for faster historical queries.
+    \item \textbf{Replication:} Master-slave replication --- writes go to master, reads from replicas for load balancing.
+    \item \textbf{Caching:} Use Redis to cache available slot counts (frequently queried, rarely changed).
+    \item \textbf{Sharding:} Shard by \texttt{facility\_id} if scaling across geographies.
+    \item \textbf{Connection pooling:} Use a connection pool to handle concurrent users efficiently.
+    \item \textbf{API layer:} Add a REST API (Node.js / Spring Boot) between the frontend and database.
+    \item \textbf{Monitoring:} Add query performance monitoring with MySQL's slow query log.
+\end{itemize}
+\end{answerbox}
+
+\begin{questionbox}[Q43: What is the difference between clustered and non-clustered indexes?]
+\end{questionbox}
+\begin{answerbox}
+\begin{longtable}{@{}lp{5.5cm}p{5.5cm}@{}}
+\toprule
+& \textbf{Clustered Index} & \textbf{Non-Clustered Index} \\
+\midrule
+Data order & Physically reorders table data & Separate structure with pointers to data \\
+Count per table & Only 1 (usually the PRIMARY KEY) & Multiple allowed \\
+Speed & Faster for range queries & Faster for specific lookups \\
+Storage & No extra storage (data IS the index) & Additional storage required \\
+\bottomrule
+\end{longtable}
+
+In MySQL InnoDB: PRIMARY KEY = clustered index. Our additional indexes (\texttt{idx\_slot\_facility}, etc.) are non-clustered (secondary indexes).
+\end{answerbox}
+
+\begin{questionbox}[Q44: Explain the query execution order in SQL.]
+\end{questionbox}
+\begin{answerbox}
+SQL does not execute in the order it is written. The actual execution order is:
+
+\begin{enumerate}[nosep]
+    \item \textbf{FROM} --- Identify source tables and perform JOINs
+    \item \textbf{WHERE} --- Filter individual rows
+    \item \textbf{GROUP BY} --- Group remaining rows
+    \item \textbf{HAVING} --- Filter groups
+    \item \textbf{SELECT} --- Evaluate expressions and compute columns
+    \item \textbf{DISTINCT} --- Remove duplicate rows
+    \item \textbf{ORDER BY} --- Sort the result
+    \item \textbf{LIMIT / OFFSET} --- Return subset of rows
+\end{enumerate}
+
+This is why you \textbf{cannot} use a column alias defined in SELECT inside a WHERE clause (WHERE executes before SELECT), but you \textbf{can} use it in ORDER BY.
+\end{answerbox}
+
+\begin{questionbox}[Q45: What is a deadlock? How can it occur in your system?]
+\end{questionbox}
+\begin{answerbox}
+A \textbf{deadlock} occurs when two or more transactions wait for each other to release locks, creating a circular dependency.
+
+\textbf{Scenario in our project:}
+\begin{enumerate}[nosep]
+    \item Transaction A locks Slot 5 (to park Vehicle 1)
+    \item Transaction B locks Slot 8 (to park Vehicle 2)
+    \item Transaction A now needs Slot 8 (to transfer Vehicle 1) --- waits for B
+    \item Transaction B now needs Slot 5 (to transfer Vehicle 2) --- waits for A
+    \item \textbf{Deadlock!} Neither can proceed.
+\end{enumerate}
+
+\textbf{MySQL's solution:} InnoDB automatically detects deadlocks and rolls back the transaction with the fewest changes.
+
+\textbf{Prevention strategies:}
+\begin{itemize}[nosep]
+    \item Always acquire locks in the same order (e.g., lower slot\_id first)
+    \item Keep transactions short
+    \item Use appropriate isolation levels
+\end{itemize}
+\end{answerbox}
+
+% ============================================================
+\section*{Quick Reference: All 50 Queries at a Glance}
+% ============================================================
+\addcontentsline{toc}{section}{Quick Reference: All 50 Queries}
+
+\begin{longtable}{@{}clp{8cm}@{}}
+\toprule
+\textbf{\#} & \textbf{Category} & \textbf{Description} \\
+\midrule
+1  & SELECT   & List all facilities \\
+2  & JOIN     & Available slots per facility \\
+3  & WHERE    & Premium/VIP users \\
+4  & JOIN     & Vehicles with owner details \\
+5  & JOIN     & Currently parked vehicles \\
+6  & GROUP BY & Slot count per facility \\
+7  & GROUP BY & Revenue per facility \\
+8  & AVG      & Average parking duration \\
+9  & GROUP BY & Revenue by payment method \\
+10 & GROUP BY & Vehicle count per user \\
+11 & INNER JOIN & Users with payments \\
+12 & LEFT JOIN  & All users with/without reservations \\
+13 & RIGHT JOIN & All slots with/without records \\
+14 & CROSS JOIN & All user-facility combinations \\
+15 & SELF JOIN  & Staff at same facility \\
+16 & Subquery & Above-average spenders \\
+17 & Subquery & Highest occupancy facility \\
+18 & NOT IN   & Never-used slots \\
+19 & Correlated & Users spending > 500 \\
+20 & UNION    & Users with reservations or payments \\
+21 & INTERSECT & Users with both \\
+22 & INSERT   & Add new user \\
+23 & UPDATE   & Mark slot occupied \\
+24 & UPDATE   & Change membership \\
+25 & DELETE   & Remove cancelled reservations \\
+26 & VIEW     & Facility occupancy dashboard \\
+27 & VIEW     & Revenue summary \\
+28 & VIEW     & Active sessions with estimated bill \\
+29 & PROCEDURE & Park vehicle \\
+30 & PROCEDURE & Exit vehicle and bill \\
+31 & PROCEDURE & Facility report \\
+32 & TRIGGER  & Auto-occupy on park \\
+33 & TRIGGER  & Auto-free on exit \\
+34 & TRIGGER  & Prevent user delete \\
+35 & WINDOW   & Rank facilities by revenue \\
+36 & WINDOW   & Running total of payments \\
+37 & WINDOW   & Rank users by spending \\
+38 & TCL      & Atomic slot transfer \\
+39 & TCL      & SAVEPOINT example \\
+40 & DCL      & GRANT/REVOKE examples \\
+41 & HOUR()   & Peak parking hours \\
+42 & DATE\_FORMAT & Monthly revenue trend \\
+43 & LEFT JOIN & Slot utilization count \\
+44 & GROUP BY & Staff salary report \\
+45 & CASE     & EV slot availability \\
+46 & GROUP\_CONCAT & Multi-vehicle users \\
+47 & ORDER BY & Longest parking session \\
+48 & GROUP BY & Revenue per slot type \\
+49 & CASE     & Membership discount simulation \\
+50 & EXISTS   & Facilities with EV slots \\
+\bottomrule
+\end{longtable}
+
+\end{document}
