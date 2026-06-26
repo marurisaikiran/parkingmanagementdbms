@@ -76,8 +76,8 @@
 {\Large Compulsory Interview Questions\\[0.3cm]}
 {\large Theory, Queries \& Concepts\\[2cm]}
 {\large\textit{Covers: ER Diagrams, Normalization, SQL (DDL/DML/DRL/TCL/DCL),\\
-Joins, Subqueries, Views, Triggers, Stored Procedures,\\
-Transactions, Window Functions \& More}}
+Joins, Subqueries, Views, Triggers, Stored Procedures, Cursors,\\
+Functions, ACID Properties, Locking, Transactions, Window Functions \& More}}
 \vfill
 {\large \today}
 \end{titlepage}
@@ -1041,10 +1041,168 @@ ORDER BY vehicle_count DESC;
 \end{answerbox}
 
 % ============================================================
+\section{Cursors, Functions \& Locking}
+% ============================================================
+
+\begin{questionbox}[Q41: What is a cursor? When would you use one?]
+\end{questionbox}
+\begin{answerbox}
+A \textbf{cursor} is a database object that allows row-by-row processing of a result set, unlike normal SQL which operates on sets of rows at once.
+
+\textbf{When to use:}
+\begin{itemize}[nosep]
+    \item When you need to process each row individually with complex logic
+    \item When the logic cannot be expressed as a single set-based query
+    \item When building reports that accumulate running totals row by row
+\end{itemize}
+
+\textbf{Project example --- Pending charges cursor:}
+\begin{lstlisting}
+DECLARE cur_active CURSOR FOR
+    SELECT pr.record_id, v.license_plate, ps.hourly_rate,
+           TIMESTAMPDIFF(MINUTE, pr.entry_time, NOW()) / 60.0
+    FROM Parking_Record pr
+    JOIN Vehicle v ON pr.vehicle_id = v.vehicle_id
+    JOIN Parking_Slot ps ON pr.slot_id = ps.slot_id
+    WHERE pr.exit_time IS NULL;
+
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_done = TRUE;
+
+OPEN cur_active;
+read_loop: LOOP
+    FETCH cur_active INTO v_id, v_plate, v_rate, v_hours;
+    IF v_done THEN LEAVE read_loop; END IF;
+    -- process each row
+END LOOP;
+CLOSE cur_active;
+\end{lstlisting}
+
+\textbf{Cursor lifecycle:} DECLARE $\rightarrow$ OPEN $\rightarrow$ FETCH (loop) $\rightarrow$ CLOSE.
+
+\textbf{Caution:} Cursors are slower than set-based operations. Use them only when set-based SQL cannot solve the problem.
+\end{answerbox}
+
+\begin{questionbox}[Q42: What is the difference between a stored procedure and a user-defined function?]
+\end{questionbox}
+\begin{answerbox}
+\begin{longtable}{@{}lp{5.5cm}p{5.5cm}@{}}
+\toprule
+& \textbf{Stored Procedure} & \textbf{User-Defined Function} \\
+\midrule
+Return & 0 or more values via OUT params & Exactly one value via RETURN \\
+Call syntax & \texttt{CALL sp\_name()} & Used inside SELECT/WHERE \\
+DML & Can do INSERT/UPDATE/DELETE & Read-only (in MySQL) \\
+Transactions & Can use COMMIT/ROLLBACK & Cannot \\
+Use in queries & Cannot appear in SELECT & Can: \texttt{SELECT fn\_name()} \\
+\bottomrule
+\end{longtable}
+
+\textbf{Project example:}
+\begin{lstlisting}
+-- Function: can be used inline in SELECT
+SELECT fn_calculate_fee('2026-06-10 09:00', '2026-06-10 17:00',
+                         30.00, 'VIP') AS fee;
+-- Returns: 192.00  (8hrs x 30 = 240, 20% VIP discount)
+
+-- Procedure: must be called with CALL
+CALL sp_exit_vehicle(6, 'UPI');
+\end{lstlisting}
+\end{answerbox}
+
+\begin{questionbox}[Q43: What is ALTER TABLE? Give examples from your project.]
+\end{questionbox}
+\begin{answerbox}
+\texttt{ALTER TABLE} modifies an existing table's structure (DDL command).
+
+\begin{lstlisting}
+-- ADD a new column
+ALTER TABLE Facility ADD COLUMN contact_phone VARCHAR(15);
+
+-- MODIFY column data type
+ALTER TABLE Facility MODIFY COLUMN contact_phone VARCHAR(20);
+
+-- ADD a CHECK constraint
+ALTER TABLE Parking_Slot ADD CONSTRAINT chk_rate
+    CHECK (hourly_rate >= 0);
+
+-- RENAME a column
+ALTER TABLE Staff CHANGE COLUMN phone contact_number VARCHAR(15);
+
+-- DROP a column
+ALTER TABLE Facility DROP COLUMN contact_phone;
+\end{lstlisting}
+
+\textbf{Key difference from DROP:} ALTER modifies structure while keeping data; DROP removes the entire table.
+\end{answerbox}
+
+\begin{questionbox}[Q44: What is locking? Explain FOR UPDATE vs LOCK IN SHARE MODE.]
+\end{questionbox}
+\begin{answerbox}
+\textbf{Locking} prevents concurrent transactions from interfering with each other.
+
+\begin{longtable}{@{}lp{5cm}p{5cm}@{}}
+\toprule
+& \textbf{FOR UPDATE} & \textbf{LOCK IN SHARE MODE} \\
+\midrule
+Lock type & Exclusive (write lock) & Shared (read lock) \\
+Other reads & Blocked (unless READ UNCOMMITTED) & Allowed \\
+Other writes & Blocked & Blocked \\
+Use case & Before modifying the row & Before reading data that must not change \\
+\bottomrule
+\end{longtable}
+
+\textbf{Project example --- preventing double-booking:}
+\begin{lstlisting}
+-- Session 1: Lock slot before booking
+START TRANSACTION;
+SELECT * FROM Parking_Slot WHERE slot_id = 14 FOR UPDATE;
+-- Row is exclusively locked; Session 2 must WAIT
+UPDATE Parking_Slot SET is_occupied = TRUE WHERE slot_id = 14;
+COMMIT;
+
+-- Session 2 (concurrent):
+START TRANSACTION;
+SELECT * FROM Parking_Slot WHERE slot_id = 14 FOR UPDATE;
+-- BLOCKED until Session 1 commits
+-- After unblock, sees is_occupied = TRUE -> booking fails
+ROLLBACK;
+\end{lstlisting}
+
+This is \textbf{pessimistic locking} --- assumes conflicts will happen and prevents them upfront.
+\end{answerbox}
+
+\begin{questionbox}[Q45: What are string and date functions? Give examples.]
+\end{questionbox}
+\begin{answerbox}
+\textbf{String Functions:}
+\begin{lstlisting}
+SELECT user_id,
+    UPPER(CONCAT(first_name, ' ', last_name)) AS name_upper,
+    LENGTH(email) AS email_length,
+    SUBSTRING(email, 1, LOCATE('@', email) - 1) AS username,
+    REVERSE(first_name) AS reversed
+FROM User;
+\end{lstlisting}
+
+\textbf{Date Functions:}
+\begin{lstlisting}
+SELECT record_id,
+    DAYNAME(entry_time) AS day_of_week,      -- 'Wednesday'
+    MONTHNAME(entry_time) AS month_name,      -- 'June'
+    DATE_FORMAT(entry_time, '%d-%b-%Y') AS formatted, -- '10-Jun-2026'
+    DATEDIFF(COALESCE(exit_time, NOW()), entry_time) AS days,
+    TIMESTAMPDIFF(HOUR, entry_time, COALESCE(exit_time, NOW())) AS hours
+FROM Parking_Record;
+\end{lstlisting}
+
+\textbf{Other useful functions:} \texttt{COALESCE(a, b)} returns first non-NULL; \texttt{IFNULL(a, b)} returns \texttt{b} if \texttt{a} is NULL; \texttt{NOW()} returns current datetime; \texttt{CURDATE()} returns current date.
+\end{answerbox}
+
+% ============================================================
 \section{Miscellaneous Interview Questions}
 % ============================================================
 
-\begin{questionbox}[Q41: What challenges did you face in this project?]
+\begin{questionbox}[Q46: What challenges did you face in this project?]
 \end{questionbox}
 \begin{answerbox}
 \begin{itemize}[nosep]
@@ -1056,7 +1214,7 @@ ORDER BY vehicle_count DESC;
 \end{itemize}
 \end{answerbox}
 
-\begin{questionbox}[Q42: How would you scale this system for a real-world deployment?]
+\begin{questionbox}[Q47: How would you scale this system for a real-world deployment?]
 \end{questionbox}
 \begin{answerbox}
 \begin{itemize}[nosep]
@@ -1070,7 +1228,7 @@ ORDER BY vehicle_count DESC;
 \end{itemize}
 \end{answerbox}
 
-\begin{questionbox}[Q43: What is the difference between clustered and non-clustered indexes?]
+\begin{questionbox}[Q48: What is the difference between clustered and non-clustered indexes?]
 \end{questionbox}
 \begin{answerbox}
 \begin{longtable}{@{}lp{5.5cm}p{5.5cm}@{}}
@@ -1087,7 +1245,7 @@ Storage & No extra storage (data IS the index) & Additional storage required \\
 In MySQL InnoDB: PRIMARY KEY = clustered index. Our additional indexes (\texttt{idx\_slot\_facility}, etc.) are non-clustered (secondary indexes).
 \end{answerbox}
 
-\begin{questionbox}[Q44: Explain the query execution order in SQL.]
+\begin{questionbox}[Q49: Explain the query execution order in SQL.]
 \end{questionbox}
 \begin{answerbox}
 SQL does not execute in the order it is written. The actual execution order is:
@@ -1106,7 +1264,7 @@ SQL does not execute in the order it is written. The actual execution order is:
 This is why you \textbf{cannot} use a column alias defined in SELECT inside a WHERE clause (WHERE executes before SELECT), but you \textbf{can} use it in ORDER BY.
 \end{answerbox}
 
-\begin{questionbox}[Q45: What is a deadlock? How can it occur in your system?]
+\begin{questionbox}[Q50: What is a deadlock? How can it occur in your system?]
 \end{questionbox}
 \begin{answerbox}
 A \textbf{deadlock} occurs when two or more transactions wait for each other to release locks, creating a circular dependency.
@@ -1131,13 +1289,15 @@ A \textbf{deadlock} occurs when two or more transactions wait for each other to 
 \end{answerbox}
 
 % ============================================================
-\section*{Quick Reference: All 50 Queries at a Glance}
+\section*{Quick Reference: All 70+ Queries at a Glance}
 % ============================================================
-\addcontentsline{toc}{section}{Quick Reference: All 50 Queries}
+\addcontentsline{toc}{section}{Quick Reference: All 70+ Queries}
 
 \begin{longtable}{@{}clp{8cm}@{}}
 \toprule
 \textbf{\#} & \textbf{Category} & \textbf{Description} \\
+\midrule
+\multicolumn{3}{l}{\textbf{queries.sql}} \\
 \midrule
 1  & SELECT   & List all facilities \\
 2  & JOIN     & Available slots per facility \\
@@ -1189,6 +1349,26 @@ A \textbf{deadlock} occurs when two or more transactions wait for each other to 
 48 & GROUP BY & Revenue per slot type \\
 49 & CASE     & Membership discount simulation \\
 50 & EXISTS   & Facilities with EV slots \\
+\midrule
+\multicolumn{3}{l}{\textbf{advanced\_concepts.sql}} \\
+\midrule
+51 & ACID      & Atomicity demo with error handler \& rollback \\
+52 & ACID      & Consistency demo (FK \& UNIQUE violations) \\
+53 & ACID      & Isolation demo (SELECT FOR UPDATE) \\
+54 & ACID      & Durability explanation (WAL / redo log) \\
+55 & CURSOR    & Pending charges row-by-row calculation \\
+56 & FUNCTION  & fn\_calculate\_fee (with membership discount) \\
+57 & FUNCTION  & fn\_slot\_status (availability check) \\
+58 & ALTER     & ADD / MODIFY / RENAME / DROP column \\
+59 & PROCEDURE & Safe slot transfer with error handling \\
+60 & LOCKING   & FOR UPDATE (exclusive lock) \\
+61 & LOCKING   & LOCK IN SHARE MODE (shared lock) \\
+62 & IF()      & Conditional aggregation (slot type breakdown) \\
+63 & COALESCE  & NULL handling with COALESCE \& IFNULL \\
+64 & DATE      & DAYNAME, MONTHNAME, DATEDIFF \\
+65 & STRING    & UPPER, LENGTH, SUBSTRING, REVERSE \\
+66 & BETWEEN   & Range filtering with LIKE \\
+67 & ANY/ALL   & Set comparison operators \\
 \bottomrule
 \end{longtable}
 
