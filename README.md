@@ -163,27 +163,32 @@ Payment:        payment_id → {record_id, user_id, amount, payment_method, paym
 
 ## 🔍 SQL Coverage
 
-This project includes **50+ comprehensive SQL queries** covering every major SQL category:
+This project includes **70+ comprehensive SQL queries** covering every major SQL category:
 
 ### Query Categories
 
 | Category | Count | Topics |
 |----------|-------|--------|
-| **DDL** | 8+ | CREATE TABLE, ALTER, DROP, CREATE INDEX, CREATE VIEW |
+| **DDL** | 10+ | CREATE TABLE, ALTER TABLE (ADD/MODIFY/DROP/RENAME column), CREATE INDEX, CREATE VIEW |
 | **DML** | 4+ | INSERT, UPDATE, DELETE |
-| **DRL / SELECT** | 20+ | Basic SELECT, WHERE, ORDER BY, LIMIT, DISTINCT |
+| **DRL / SELECT** | 20+ | Basic SELECT, WHERE, ORDER BY, LIMIT, DISTINCT, BETWEEN, LIKE |
 | **Joins** | 5 types | INNER, LEFT, RIGHT, CROSS, SELF |
 | **Subqueries** | 4 types | Scalar, Row, Table, Correlated |
 | **Aggregates** | 6+ | COUNT, SUM, AVG, MAX, MIN, GROUP_CONCAT |
-| **GROUP BY / HAVING** | 8+ | Grouping with filters |
+| **GROUP BY / HAVING** | 8+ | Grouping with filters, conditional aggregation (IF) |
 | **Set Operations** | 2 | UNION, simulated INTERSECT |
 | **Views** | 3 | Occupancy dashboard, revenue summary, active sessions |
-| **Stored Procedures** | 3 | Park vehicle, exit & bill, facility report |
+| **Stored Procedures** | 6 | Park vehicle, exit & bill, facility report, atomic demo, cursor demo, safe transfer |
+| **User-Defined Functions** | 2 | Fee calculator (with discount), slot status |
 | **Triggers** | 3 | Auto-occupy, auto-free, prevent unsafe delete |
+| **Cursors** | 1 | Row-by-row pending charges calculation |
 | **Window Functions** | 3 | RANK, DENSE_RANK, running totals |
-| **TCL** | 2 | COMMIT/ROLLBACK, SAVEPOINT |
+| **TCL / ACID** | 5+ | COMMIT, ROLLBACK, SAVEPOINT, error handling, atomicity demo |
+| **Locking** | 2 | FOR UPDATE (exclusive), LOCK IN SHARE MODE (shared) |
 | **DCL** | 2 | GRANT, REVOKE |
-| **Advanced** | 8+ | CASE, EXISTS, peak hours, monthly trends, slot utilization |
+| **String Functions** | 5+ | UPPER, LENGTH, SUBSTRING, LOCATE, REVERSE, CONCAT |
+| **Date Functions** | 5+ | DAYNAME, MONTHNAME, DATEDIFF, TIMESTAMPDIFF, DATE_FORMAT |
+| **Advanced** | 8+ | CASE, EXISTS, ANY/ALL, COALESCE, IFNULL, BETWEEN, peak hours |
 
 ---
 
@@ -194,10 +199,11 @@ parkingmanagementdbms/
 │
 ├── schema.sql                        # Database & table creation (DDL)
 ├── sample_data.sql                   # Sample data for all 8 tables (DML)
-├── queries.sql                       # 50+ comprehensive SQL queries
+├── queries.sql                       # 50+ core SQL queries (joins, subqueries, views, triggers, etc.)
+├── advanced_concepts.sql             # ACID demos, cursors, functions, ALTER, locking, error handling
 ├── er_diagram_and_normalization.sql  # ER diagram & BCNF normalization proof
 ├── interview_questions.tex           # LaTeX source for interview prep document
-├── interview_questions.pdf           # Compiled PDF — 45 interview Q&A
+├── interview_questions.pdf           # Compiled PDF — 45+ interview Q&A
 └── README.md                         # This file
 ```
 
@@ -239,7 +245,7 @@ parkingmanagementdbms/
 
 1. Open MySQL Workbench → Connect to your local instance
 2. `File → Open SQL Script` → Select `schema.sql` → Execute (⚡)
-3. Repeat for `sample_data.sql` and `queries.sql`
+3. Repeat for `sample_data.sql`, `queries.sql`, and `advanced_concepts.sql`
 
 ---
 
@@ -294,13 +300,49 @@ JOIN User u ON p.user_id = u.user_id;
 
 ---
 
-## ⚙️ Stored Procedures
+## 🧪 ACID Properties — Demonstrated
+
+Each ACID property is demonstrated with runnable SQL in `advanced_concepts.sql`:
+
+| Property | How It's Demonstrated |
+|----------|----------------------|
+| **Atomicity** | `sp_atomic_demo()` — multi-step slot transfer; if any step fails, entire transaction rolls back |
+| **Consistency** | FK violations (non-existent user), UNIQUE violations (duplicate email) — DB rejects invalid state |
+| **Isolation** | `SELECT ... FOR UPDATE` — locks a slot row so concurrent booking attempts must wait |
+| **Durability** | After `COMMIT`, InnoDB's write-ahead log (redo log) ensures data survives crashes |
+
+```sql
+-- Atomicity: All-or-nothing slot transfer
+CALL sp_atomic_demo();
+
+-- Isolation: Lock a slot to prevent double-booking
+START TRANSACTION;
+SELECT * FROM Parking_Slot WHERE slot_id = 14 FOR UPDATE;  -- exclusive lock
+UPDATE Parking_Slot SET is_occupied = TRUE WHERE slot_id = 14;
+COMMIT;
+```
+
+---
+
+## ⚙️ Stored Procedures & Functions
+
+### Stored Procedures
 
 | Procedure | Parameters | Description |
 |-----------|-----------|-------------|
 | `sp_park_vehicle` | `(vehicle_id, slot_id)` | Parks a vehicle — checks availability, inserts record, marks slot occupied |
 | `sp_exit_vehicle` | `(record_id, payment_method)` | Exits vehicle — sets exit time, calculates bill, inserts payment, frees slot |
 | `sp_facility_report` | `(facility_id)` | Returns comprehensive facility stats — slots, staff, revenue |
+| `sp_atomic_demo` | `()` | Demonstrates ACID atomicity with error handling and rollback |
+| `sp_pending_charges_cursor` | `()` | Uses a **CURSOR** to iterate active sessions and compute pending charges |
+| `sp_safe_transfer_slot` | `(record_id, new_slot_id)` | Transfers vehicle between slots with full error handling |
+
+### User-Defined Functions
+
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `fn_calculate_fee` | `DECIMAL(8,2)` | Calculates parking fee with membership-based discount (VIP 20%, Premium 10%) |
+| `fn_slot_status` | `VARCHAR(50)` | Returns human-readable slot status (e.g., "Regular - AVAILABLE") |
 
 ```sql
 -- Park a vehicle
@@ -309,8 +351,12 @@ CALL sp_park_vehicle(4, 3);
 -- Exit and generate bill
 CALL sp_exit_vehicle(6, 'UPI');
 
--- Facility report
-CALL sp_facility_report(1);
+-- Cursor demo: pending charges for all active sessions
+CALL sp_pending_charges_cursor();
+
+-- Calculate fee with VIP discount
+SELECT fn_calculate_fee('2026-06-10 09:00:00', '2026-06-10 17:00:00', 30.00, 'VIP');
+-- Result: 192.00 (8hrs × ₹30 = ₹240, 20% VIP discount)
 ```
 
 ---
